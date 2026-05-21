@@ -1,5 +1,5 @@
 #!/bin/bash
-lb config \
+lb config noauto \
   --distribution trixie \
   --debian-installer none \
   --archive-areas "main contrib non-free non-free-firmware" \
