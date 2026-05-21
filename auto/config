@@ -1,0 +1,8 @@
+#!/bin/bash
+lb config \
+  --distribution trixie \
+  --debian-installer none \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --debootstrap-options "--variant=minbase" \
+  --bootappend-live "boot=live components locales=fr_CA.UTF-8 keyboard-layouts=ca" \
+  "${@}"
