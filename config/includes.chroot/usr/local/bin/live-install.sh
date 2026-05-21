@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-REPO_URL="https://github.com/PLACEHOLDER/debian-setup.git"
-INSTALL_DIR="/root/debian-setup"
+REPO_URL="https://github.com/patperron99/debian-install-scripts.git"
+BRANCH="sway"
+INSTALL_DIR="$(pwd)/debian-setup" #"/root/debian-setup"
 
 echo "══════════════════════════════════════════"
 echo "  Debian Install Live — Bootstrap"
@@ -28,28 +29,51 @@ if [[ -d "$INSTALL_DIR" ]]; then
     echo "Le répertoire $INSTALL_DIR existe déjà, clone ignoré."
 else
     echo "Clonage du dépôt $REPO_URL..."
-    git clone "$REPO_URL" "$INSTALL_DIR"
+    git clone -b "$BRANCH" "$REPO_URL" "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
 
 if [[ ! -f install.conf ]]; then
-    echo "Création de install.conf depuis l'exemple..."
     cp install.conf.example install.conf
-    sed -i 's/^INSTALL_TIMEZONE=.*/INSTALL_TIMEZONE=America\/Montreal/' install.conf
-    sed -i 's/^INSTALL_LOCALE=.*/INSTALL_LOCALE=fr_CA.UTF-8/' install.conf
 fi
 
+echo "──────────────────────────────────────────"
+echo "  Configuration de l'installation"
+echo "──────────────────────────────────────────"
 echo
-echo "Fichier de configuration : $INSTALL_DIR/install.conf"
-echo "Veuillez le vérifier et l'adapter à votre environnement."
+
+echo "Disques disponibles :"
+lsblk -d -o NAME,SIZE,MODEL --noheadings | grep -v '^loop' | sed 's/^/  /'
 echo
-read -rp "Ouvrir install.conf avec neovim maintenant ? [O/n] " EDIT_CHOICE
-if [[ "${EDIT_CHOICE,,}" != "n" ]]; then
-    nvim install.conf
-fi
+read -rp "Disque cible (ex: sda, nvme0n1) : " DISK
+while [[ -z "$DISK" || ! -b "/dev/$DISK" ]]; do
+    echo "  → /dev/$DISK introuvable, réessayez."
+    read -rp "Disque cible (ex: sda, nvme0n1) : " DISK
+done
 
 echo
+read -rp "Fuseau horaire   (ex: America/Montreal, Europe/Paris) : " TIMEZONE
+TIMEZONE="${TIMEZONE:-America/Montreal}"
+
+echo
+read -rp "Locale           (ex: en_US.UTF-8, fr_CA.UTF-8)       : " LOCALE
+LOCALE="${LOCALE:-en_US.UTF-8}"
+
+sed -i "s|^INSTALL_DISK=.*|INSTALL_DISK=/dev/$DISK|" install.conf
+sed -i "s|^INSTALL_TIMEZONE=.*|INSTALL_TIMEZONE=$TIMEZONE|" install.conf
+sed -i "s|^INSTALL_LOCALE=.*|INSTALL_LOCALE=$LOCALE|" install.conf
+
+echo
+echo "──────────────────────────────────────────"
+echo "  Résumé"
+echo "──────────────────────────────────────────"
+echo "  Disque    : /dev/$DISK"
+echo "  Fuseau    : $TIMEZONE"
+echo "  Locale    : $LOCALE"
+echo "──────────────────────────────────────────"
+echo
+
 read -rp "Lancer debian-install-fresh.sh ? [O/n] " CONFIRM
 if [[ "${CONFIRM,,}" == "n" ]]; then
     echo "Installation annulée."
